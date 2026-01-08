@@ -52,37 +52,6 @@ npm run build
 npm start
 ```
 
-## Environment Variables
-
-Tạo file `.env` từ `.env.example`:
-
-```env
-NODE_ENV=development
-PORT=5000
-
-# PostgreSQL
-DB_HOST=localhost
-DB_PORT=5432
-DB_USERNAME=postgres
-DB_PASSWORD=your_password
-DB_DATABASE=task2_db
-
-# JWT
-JWT_SECRET=your_secret_key
-JWT_EXPIRES_IN=7d
-JWT_REFRESH_SECRET=your_refresh_secret
-JWT_REFRESH_EXPIRES_IN=30d
-
-# Bcrypt
-BCRYPT_SALT_ROUNDS=12
-
-# API
-API_PREFIX=/api/v1
-
-# CORS (React Vite)
-CORS_ORIGIN=http://localhost:5173
-```
-
 ## API Endpoints
 
 ### Authentication
