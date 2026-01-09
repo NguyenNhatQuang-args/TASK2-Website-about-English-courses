@@ -1,5 +1,8 @@
 # Dependencies
 node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
 # Build output
 dist/
@@ -10,6 +13,14 @@ build/
 .env.local
 .env.*
 !.env.example
+
+# Sensitive files
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+credentials/
 
 # IDE
 .idea/
