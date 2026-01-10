@@ -24,7 +24,9 @@
   "license": "ISC",
   "dependencies": {
     "@nestjs/common": "^11.1.11",
+    "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.11",
+    "@nestjs/platform-express": "^11.1.11",
     "@nestjs/typeorm": "^11.0.0",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",

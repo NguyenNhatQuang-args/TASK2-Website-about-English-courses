@@ -1,19 +1,33 @@
+/*
 import createApp from './app';
 import { config } from './config';
 import { connectDatabase } from './config/database';
 import { seedDefaultData } from './seeds/seed';
+*/
+import { config } from './config';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
 
 // Start server
 const startServer = async (): Promise<void> => {
   try {
+
+    const app = await NestFactory.create(AppModule);
+    app.enableCors();
+    app.setGlobalPrefix('api/v1');
+
+    /*
     // Connect to database
     await connectDatabase();
 
+    
     // Seed default data
     await seedDefaultData();
 
+    
     // Create Express app
     const app = createApp();
+    */
 
     // Start listening
     app.listen(config.port, () => {

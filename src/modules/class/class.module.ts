@@ -5,6 +5,7 @@ import { ClassController } from './class.controller';
 import { Class } from './class.entity';
 import { User } from '../../entities/user.entity';
 
+
 @Module({
     imports: [TypeOrmModule.forFeature([Class, User])],
     controllers: [ClassController],
