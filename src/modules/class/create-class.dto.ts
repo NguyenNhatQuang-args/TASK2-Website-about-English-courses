@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEnum, IsArray, IsInt } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsArray } from 'class-validator';
 import { CourseLevel, CourseKind }  from './enums';
 
 export class CreateClassDto {
@@ -19,6 +19,6 @@ export class CreateClassDto {
     kindOfCourse: CourseKind;
 
     @IsArray()
-    @IsInt({ each: true })
-    studentIds: number[];
+    @IsString({ each: true })
+    studentIds: string[];
 }
