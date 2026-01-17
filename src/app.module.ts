@@ -9,13 +9,15 @@ import { RoleModule } from './modules/role/role.module';
 import { PermissionModule } from './modules/permission/permission.module';
 import { ClassModule } from './modules/class/class.module';
 import { LessonsModule } from './modules/lessons/lessons.module';
+import { CommonListModule } from './modules/common-list/common-list.module';
 
 // Entities
 import { User } from './entities/user.entity';
 import { Role } from './entities/role.entity';
 import { Permission } from './entities/permission.entity';
 import { Class } from './modules/class/class.entity';
-import { Lesson } from './modules/lessons/lessons.entity'; // Đảm bảo có chữ 's'
+import { Lesson } from './modules/lessons/lessons.entity';
+import { CommonList } from './modules/common-list/common-list.entity';
 
 @Module({
   imports: [
@@ -32,7 +34,7 @@ import { Lesson } from './modules/lessons/lessons.entity'; // Đảm bảo có c
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
-        entities: [User, Role, Permission, Class, Lesson],
+        entities: [User, Role, Permission, Class, Lesson, CommonList],
         synchronize: configService.get<string>('NODE_ENV') === 'development',
         autoLoadEntities: true,
         ssl: configService.get<string>('NODE_ENV') === 'production' 
@@ -48,6 +50,7 @@ import { Lesson } from './modules/lessons/lessons.entity'; // Đảm bảo có c
     PermissionModule,
     ClassModule,
     LessonsModule,
+    CommonListModule,
   ],
 })
 export class AppModule {}
