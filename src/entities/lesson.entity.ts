@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Course } from './course.entity';
@@ -17,8 +18,11 @@ export class Lesson {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  @Column({ type: 'varchar', length: 50, unique: true })
+  code!: string;
+
   @Column({ type: 'varchar', length: 255 })
-  title!: string;
+  name!: string;
 
   @Column({ type: 'text', nullable: true })
   description!: string | null;

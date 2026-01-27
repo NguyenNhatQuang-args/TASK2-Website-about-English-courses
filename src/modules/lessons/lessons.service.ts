@@ -1,8 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Lesson, Class, Status } from '../../entities';
-import { LessonsDto } from './lessons.dto';
+import { CreateLessonDto, UpdateLessonDto } from './dto';
 
 @Injectable()
 export class LessonsService {
@@ -14,11 +14,11 @@ export class LessonsService {
     private readonly classRepository: Repository<Class>,
   ) {}
 
-  async create(dto: LessonsDto) {
-    // Kiểm tra tên bài học trùng lặp
-    const existLesson = await this.lessonRepository.findOne({ where: { title: dto.title } });
+  async create(dto: CreateLessonDto) {
+    // Kiểm tra mã bài học trùng lặp
+    const existLesson = await this.lessonRepository.findOne({ where: { code: dto.code } });
     if (existLesson) {
-      throw new BadRequestException(`Bài học '${dto.title}' đã tồn tại!`);
+      throw new ConflictException(`Mã bài học '${dto.code}' đã tồn tại!`);
     }
 
     // Kiểm tra ID lớp học hợp lệ nếu có
@@ -30,11 +30,13 @@ export class LessonsService {
     }
 
     const newLesson = this.lessonRepository.create({
-      title: dto.title,
+      code: dto.code,
+      name: dto.name,
       description: dto.description,
       classId: dto.classId,
       courseId: dto.courseId,
       orderIndex: dto.orderIndex || 0,
+      durationMinutes: dto.durationMinutes,
       status: Status.ACTIVE,
     });
 
@@ -49,6 +51,14 @@ export class LessonsService {
     });
   }
 
+  async findAllByCourse(courseId: string) {
+    return await this.lessonRepository.find({
+      where: { courseId },
+      relations: ['class', 'course'],
+      order: { orderIndex: 'ASC' }
+    });
+  }
+
   async findAll() {
     return await this.lessonRepository.find({
       relations: ['class', 'course'],
@@ -57,9 +67,58 @@ export class LessonsService {
   }
 
   async findOne(id: string) {
-    return await this.lessonRepository.findOne({
+    const lesson = await this.lessonRepository.findOne({
       where: { id },
       relations: ['class', 'course'],
     });
+
+    if (!lesson) {
+      throw new NotFoundException('Không tìm thấy bài học');
+    }
+
+    return lesson;
+  }
+
+  async findByCode(code: string) {
+    const lesson = await this.lessonRepository.findOne({
+      where: { code },
+      relations: ['class', 'course'],
+    });
+
+    if (!lesson) {
+      throw new NotFoundException('Không tìm thấy bài học');
+    }
+
+    return lesson;
+  }
+
+  async update(id: string, dto: UpdateLessonDto) {
+    const lesson = await this.lessonRepository.findOne({ where: { id } });
+
+    if (!lesson) {
+      throw new NotFoundException('Không tìm thấy bài học');
+    }
+
+    // Check code uniqueness if changing
+    if (dto.code && dto.code !== lesson.code) {
+      const existLesson = await this.lessonRepository.findOne({ where: { code: dto.code } });
+      if (existLesson) {
+        throw new ConflictException(`Mã bài học '${dto.code}' đã tồn tại!`);
+      }
+    }
+
+    Object.assign(lesson, dto);
+    return await this.lessonRepository.save(lesson);
+  }
+
+  async delete(id: string) {
+    const lesson = await this.lessonRepository.findOne({ where: { id } });
+
+    if (!lesson) {
+      throw new NotFoundException('Không tìm thấy bài học');
+    }
+
+    await this.lessonRepository.remove(lesson);
+    return { message: 'Xóa bài học thành công' };
   }
 }

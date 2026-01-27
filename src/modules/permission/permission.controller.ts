@@ -16,6 +16,7 @@ import { CreatePermissionDto, UpdatePermissionDto, PermissionQueryDto } from './
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../../entities/enums';
 
 @Controller('permissions')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -35,23 +36,25 @@ export class PermissionController {
     };
   }
 
-  // GET /api/v1/permissions/actions
-  @Get('actions')
-  getActions() {
+  // GET /api/v1/permissions/roles
+  @Get('roles')
+  getRoles() {
     return {
       success: true,
-      message: 'Lấy danh sách actions thành công',
-      data: this.permissionService.getActions(),
+      message: 'Lấy danh sách roles thành công',
+      data: this.permissionService.getRoles(),
     };
   }
 
-  // GET /api/v1/permissions/resources
-  @Get('resources')
-  getResources() {
+  // GET /api/v1/permissions/by-role/:role
+  @Get('by-role/:role')
+  async findByRole(@Param('role') role: UserRole) {
+    const result = await this.permissionService.findByRole(role);
     return {
       success: true,
-      message: 'Lấy danh sách resources thành công',
-      data: this.permissionService.getResources(),
+      message: 'Lấy danh sách quyền theo role thành công',
+      data: result.permissions,
+      total: result.total,
     };
   }
 

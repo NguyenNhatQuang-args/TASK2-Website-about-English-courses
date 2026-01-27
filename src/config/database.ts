@@ -8,13 +8,15 @@ import { Class } from '../entities/class.entity';
 import { ClassStudent } from '../entities/class-student.entity';
 import { Lesson } from '../entities/lesson.entity';
 import { LessonDetail } from '../entities/lesson-detail.entity';
+import { ExerciseSection } from '../entities/exercise-section.entity';
+import { Question } from '../entities/question.entity';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
   url: config.databaseUrl,
   synchronize: false, // Don't auto sync - use migrations
   logging: isDevelopment(),
-  entities: [User, Role, Permission, Course, Class, ClassStudent, Lesson, LessonDetail],
+  entities: [User, Role, Permission, Course, Class, ClassStudent, Lesson, LessonDetail, ExerciseSection, Question],
   migrations: ['src/migrations/*.ts'],
   subscribers: [],
   ssl: {

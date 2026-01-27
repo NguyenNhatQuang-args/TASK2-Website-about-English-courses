@@ -173,19 +173,19 @@ const seedLessons = async (): Promise<void> => {
   const lessonRepository = AppDataSource.getRepository(Lesson);
 
   const lessons = [
-    { title: 'Introduction to IELTS', description: 'Giới thiệu về kỳ thi IELTS', orderIndex: 1, status: Status.ACTIVE },
-    { title: 'Listening Skills - Part 1', description: 'Kỹ năng nghe phần 1', orderIndex: 2, status: Status.ACTIVE },
-    { title: 'Reading Techniques', description: 'Kỹ thuật đọc hiểu', orderIndex: 3, status: Status.ACTIVE },
-    { title: 'Writing Task 1', description: 'Viết Task 1 - Mô tả biểu đồ', orderIndex: 4, status: Status.ACTIVE },
-    { title: 'Speaking Part 1', description: 'Kỹ năng nói phần 1', orderIndex: 5, status: Status.ACTIVE },
+    { code: 'IELTS-INTRO', name: 'Introduction to IELTS', description: 'Giới thiệu về kỳ thi IELTS', orderIndex: 1, status: Status.ACTIVE },
+    { code: 'IELTS-LS-01', name: 'Listening Skills - Part 1', description: 'Kỹ năng nghe phần 1', orderIndex: 2, status: Status.ACTIVE },
+    { code: 'IELTS-RD-01', name: 'Reading Techniques', description: 'Kỹ thuật đọc hiểu', orderIndex: 3, status: Status.ACTIVE },
+    { code: 'IELTS-WR-01', name: 'Writing Task 1', description: 'Viết Task 1 - Mô tả biểu đồ', orderIndex: 4, status: Status.ACTIVE },
+    { code: 'IELTS-SP-01', name: 'Speaking Part 1', description: 'Kỹ năng nói phần 1', orderIndex: 5, status: Status.ACTIVE },
   ];
 
   for (const lessonData of lessons) {
-    const existingLesson = await lessonRepository.findOne({ where: { title: lessonData.title } });
+    const existingLesson = await lessonRepository.findOne({ where: { code: lessonData.code } });
     if (!existingLesson) {
       const lesson = lessonRepository.create(lessonData);
       await lessonRepository.save(lesson);
-      console.log(`Created lesson: ${lessonData.title}`);
+      console.log(`Created lesson: ${lessonData.name}`);
     }
   }
 };
@@ -195,7 +195,7 @@ const seedLessonDetails = async (): Promise<void> => {
   const lessonRepository = AppDataSource.getRepository(Lesson);
   const lessonDetailRepository = AppDataSource.getRepository(LessonDetail);
 
-  const introLesson = await lessonRepository.findOne({ where: { title: 'Introduction to IELTS' } });
+  const introLesson = await lessonRepository.findOne({ where: { name: 'Introduction to IELTS' } });
   if (introLesson) {
     const existingDetail = await lessonDetailRepository.findOne({ 
       where: { lessonId: introLesson.id, contentType: 'text' } 

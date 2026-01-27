@@ -9,6 +9,7 @@ import { RoleModule } from './modules/role/role.module';
 import { PermissionModule } from './modules/permission/permission.module';
 import { ClassModule } from './modules/class/class.module';
 import { LessonsModule } from './modules/lessons/lessons.module';
+import { ExercisesModule } from './modules/exercises/exercises.module';
 import { CommonListModule } from './modules/common-list/common-list.module';
 
 // Entities
@@ -20,7 +21,9 @@ import {
   Class, 
   ClassStudent, 
   Lesson, 
-  LessonDetail 
+  LessonDetail,
+  ExerciseSection,
+  Question,
 } from './entities';
 import { CommonList } from './modules/common-list/common-list.entity';
 
@@ -39,7 +42,10 @@ import { CommonList } from './modules/common-list/common-list.entity';
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
-        entities: [User, Role, Permission, Course, Class, ClassStudent, Lesson, LessonDetail, CommonList],
+        entities: [
+          User, Role, Permission, Course, Class, ClassStudent, 
+          Lesson, LessonDetail, ExerciseSection, Question, CommonList
+        ],
         synchronize: false, // Use migrations instead
         autoLoadEntities: true,
         ssl: configService.get<string>('NODE_ENV') === 'production' 
@@ -55,6 +61,7 @@ import { CommonList } from './modules/common-list/common-list.entity';
     PermissionModule,
     ClassModule,
     LessonsModule,
+    ExercisesModule,
     CommonListModule,
   ],
 })

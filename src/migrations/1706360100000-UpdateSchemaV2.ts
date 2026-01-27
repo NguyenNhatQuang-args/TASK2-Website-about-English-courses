@@ -1,13 +1,15 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class CreateCompleteSchema1706360000000 implements MigrationInterface {
-    name = 'CreateCompleteSchema1706360000000'
+export class UpdateSchemaV2_1706360100000 implements MigrationInterface {
+    name = 'UpdateSchemaV2_1706360100000'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // Enable UUID extension
         await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
 
         // Drop existing tables if any (reset)
+        await queryRunner.query(`DROP TABLE IF EXISTS questions CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS exercise_sections CASCADE`);
         await queryRunner.query(`DROP TABLE IF EXISTS lesson_details CASCADE`);
         await queryRunner.query(`DROP TABLE IF EXISTS lessons CASCADE`);
         await queryRunner.query(`DROP TABLE IF EXISTS class_students CASCADE`);
@@ -16,6 +18,7 @@ export class CreateCompleteSchema1706360000000 implements MigrationInterface {
         await queryRunner.query(`DROP TABLE IF EXISTS users CASCADE`);
         await queryRunner.query(`DROP TABLE IF EXISTS roles CASCADE`);
         await queryRunner.query(`DROP TABLE IF EXISTS permissions CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS common_lists CASCADE`);
 
         // Drop existing types
         await queryRunner.query(`DROP TYPE IF EXISTS user_role_enum CASCADE`);
@@ -26,23 +29,29 @@ export class CreateCompleteSchema1706360000000 implements MigrationInterface {
         await queryRunner.query(`DROP TYPE IF EXISTS course_level_enum CASCADE`);
         await queryRunner.query(`DROP TYPE IF EXISTS course_kind_enum CASCADE`);
         await queryRunner.query(`DROP TYPE IF EXISTS status_enum CASCADE`);
+        await queryRunner.query(`DROP TYPE IF EXISTS exercise_section_type_enum CASCADE`);
+        await queryRunner.query(`DROP TYPE IF EXISTS question_type_enum CASCADE`);
+        await queryRunner.query(`DROP TYPE IF EXISTS difficulty_level_enum CASCADE`);
+        await queryRunner.query(`DROP TYPE IF EXISTS common_list_type_enum CASCADE`);
 
         // Create ENUM types
         await queryRunner.query(`CREATE TYPE status_enum AS ENUM ('ACTIVE', 'INACTIVE')`);
         await queryRunner.query(`CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'TEACHER', 'STUDENT')`);
-        await queryRunner.query(`CREATE TYPE permission_action_enum AS ENUM ('create', 'read', 'update', 'delete', 'manage')`);
-        await queryRunner.query(`CREATE TYPE permission_resource_enum AS ENUM ('users', 'roles', 'permissions', 'courses', 'lessons', 'classes', 'profile')`);
         await queryRunner.query(`CREATE TYPE course_level_enum AS ENUM ('S', 'Pres', 'TC', 'MTC', 'FI', 'EF', 'TE', 'ME')`);
         await queryRunner.query(`CREATE TYPE course_kind_enum AS ENUM ('IELTS', 'TOEIC', '4SKILL')`);
+        await queryRunner.query(`CREATE TYPE exercise_section_type_enum AS ENUM ('vocab', 'grammar', 'practice', 'video_grammar', 'listening', 'writing', 'reading', 'speaking')`);
+        await queryRunner.query(`CREATE TYPE question_type_enum AS ENUM ('multiple_choice', 'fill_blank', 'match', 'arrange', 'short_answer', 'essay', 'word_bank', 'true_false')`);
+        await queryRunner.query(`CREATE TYPE difficulty_level_enum AS ENUM ('easy', 'medium', 'hard')`);
+        await queryRunner.query(`CREATE TYPE common_list_type_enum AS ENUM ('KIND_OF_COURSE', 'LEVEL', 'ROLE')`);
 
-        // 1. PERMISSIONS TABLE
+        // 1. PERMISSIONS TABLE (New structure with code and roles)
         await queryRunner.query(`
             CREATE TABLE permissions (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-                name VARCHAR(100) UNIQUE NOT NULL,
-                action permission_action_enum,
-                resource permission_resource_enum,
+                code VARCHAR(50) UNIQUE NOT NULL,
+                name VARCHAR(100) NOT NULL,
                 description TEXT DEFAULT '',
+                roles TEXT DEFAULT '',
                 is_active BOOLEAN DEFAULT TRUE,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -87,11 +96,10 @@ export class CreateCompleteSchema1706360000000 implements MigrationInterface {
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 title VARCHAR(255) NOT NULL,
                 description TEXT,
-                thumbnail_url TEXT,
                 level course_level_enum,
                 kind course_kind_enum,
                 status status_enum DEFAULT 'ACTIVE',
-                created_by UUID REFERENCES users(id),
+                created_by UUID REFERENCES users(id) ON DELETE SET NULL,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             )
@@ -117,7 +125,7 @@ export class CreateCompleteSchema1706360000000 implements MigrationInterface {
             )
         `);
 
-        // 6. CLASS_STUDENTS TABLE
+        // 6. CLASS_STUDENTS TABLE (Join table)
         await queryRunner.query(`
             CREATE TABLE class_students (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -129,18 +137,19 @@ export class CreateCompleteSchema1706360000000 implements MigrationInterface {
             )
         `);
 
-        // 7. LESSONS TABLE
+        // 7. LESSONS TABLE (with code field)
         await queryRunner.query(`
             CREATE TABLE lessons (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-                title VARCHAR(255) NOT NULL,
+                code VARCHAR(50) UNIQUE NOT NULL,
+                name VARCHAR(255) NOT NULL,
                 description TEXT,
                 course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
                 class_id UUID REFERENCES classes(id) ON DELETE SET NULL,
                 order_index INTEGER DEFAULT 0,
                 duration_minutes INTEGER,
                 status status_enum DEFAULT 'ACTIVE',
-                created_by UUID REFERENCES users(id),
+                created_by UUID REFERENCES users(id) ON DELETE SET NULL,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             )
@@ -152,62 +161,100 @@ export class CreateCompleteSchema1706360000000 implements MigrationInterface {
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 lesson_id UUID NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
                 content_type VARCHAR(50) NOT NULL,
-                title VARCHAR(255),
-                content TEXT,
-                video_url TEXT,
-                audio_url TEXT,
-                document_url TEXT,
+                content_url TEXT,
+                description TEXT,
                 order_index INTEGER DEFAULT 0,
-                duration_seconds INTEGER,
-                is_required BOOLEAN DEFAULT TRUE,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             )
         `);
 
-        // CREATE INDEXES
-        // Users
-        await queryRunner.query(`CREATE INDEX idx_users_username ON users(username)`);
+        // 9. EXERCISE_SECTIONS TABLE
+        await queryRunner.query(`
+            CREATE TABLE exercise_sections (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                lesson_id UUID NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+                section_type exercise_section_type_enum NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                description TEXT,
+                order_index INTEGER DEFAULT 0,
+                total_points INTEGER DEFAULT 0,
+                estimated_time INTEGER DEFAULT 0,
+                status status_enum DEFAULT 'ACTIVE',
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // 10. QUESTIONS TABLE
+        await queryRunner.query(`
+            CREATE TABLE questions (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                section_id UUID NOT NULL REFERENCES exercise_sections(id) ON DELETE CASCADE,
+                question_type question_type_enum NOT NULL,
+                question_text TEXT NOT NULL,
+                difficulty difficulty_level_enum DEFAULT 'medium',
+                points INTEGER DEFAULT 1,
+                order_index INTEGER DEFAULT 0,
+                options JSONB,
+                answer JSONB,
+                explanation TEXT,
+                audio_url TEXT,
+                video_url TEXT,
+                image_url TEXT,
+                passage TEXT,
+                transcript TEXT,
+                word VARCHAR(255),
+                pronunciation VARCHAR(255),
+                definition TEXT,
+                examples JSONB,
+                word_bank JSONB,
+                correct_word_ids JSONB,
+                grammar_topic VARCHAR(255),
+                rubric JSONB,
+                evaluation_criteria JSONB,
+                hints JSONB,
+                sample_answer TEXT,
+                topic_area VARCHAR(255),
+                status status_enum DEFAULT 'ACTIVE',
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // 11. COMMON_LISTS TABLE
+        await queryRunner.query(`
+            CREATE TABLE common_lists (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                type common_list_type_enum NOT NULL,
+                code VARCHAR(50) NOT NULL,
+                name VARCHAR(100) NOT NULL,
+                description TEXT,
+                "order" INTEGER DEFAULT 0,
+                is_active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(type, code)
+            )
+        `);
+
+        // Create indexes
         await queryRunner.query(`CREATE INDEX idx_users_email ON users(email)`);
+        await queryRunner.query(`CREATE INDEX idx_users_username ON users(username)`);
         await queryRunner.query(`CREATE INDEX idx_users_role ON users(role)`);
-        await queryRunner.query(`CREATE INDEX idx_users_status ON users(status)`);
-
-        // Permissions
-        await queryRunner.query(`CREATE INDEX idx_permissions_name ON permissions(name)`);
-        await queryRunner.query(`CREATE INDEX idx_permissions_action ON permissions(action)`);
-        await queryRunner.query(`CREATE INDEX idx_permissions_resource ON permissions(resource)`);
-
-        // Roles
-        await queryRunner.query(`CREATE INDEX idx_roles_name ON roles(name)`);
-
-        // Courses
-        await queryRunner.query(`CREATE INDEX idx_courses_title ON courses(title)`);
-        await queryRunner.query(`CREATE INDEX idx_courses_level ON courses(level)`);
-        await queryRunner.query(`CREATE INDEX idx_courses_kind ON courses(kind)`);
-        await queryRunner.query(`CREATE INDEX idx_courses_status ON courses(status)`);
-
-        // Classes
-        await queryRunner.query(`CREATE INDEX idx_classes_name ON classes(name)`);
-        await queryRunner.query(`CREATE INDEX idx_classes_code ON classes(class_code)`);
+        await queryRunner.query(`CREATE INDEX idx_permissions_code ON permissions(code)`);
         await queryRunner.query(`CREATE INDEX idx_classes_course ON classes(course_id)`);
         await queryRunner.query(`CREATE INDEX idx_classes_teacher ON classes(teacher_id)`);
-        await queryRunner.query(`CREATE INDEX idx_classes_status ON classes(status)`);
-
-        // Class Students
         await queryRunner.query(`CREATE INDEX idx_class_students_class ON class_students(class_id)`);
         await queryRunner.query(`CREATE INDEX idx_class_students_student ON class_students(student_id)`);
-
-        // Lessons
-        await queryRunner.query(`CREATE INDEX idx_lessons_title ON lessons(title)`);
+        await queryRunner.query(`CREATE INDEX idx_lessons_code ON lessons(code)`);
         await queryRunner.query(`CREATE INDEX idx_lessons_course ON lessons(course_id)`);
         await queryRunner.query(`CREATE INDEX idx_lessons_class ON lessons(class_id)`);
-        await queryRunner.query(`CREATE INDEX idx_lessons_status ON lessons(status)`);
+        await queryRunner.query(`CREATE INDEX idx_exercise_sections_lesson ON exercise_sections(lesson_id)`);
+        await queryRunner.query(`CREATE INDEX idx_questions_section ON questions(section_id)`);
+        await queryRunner.query(`CREATE INDEX idx_common_lists_type ON common_lists(type)`);
 
-        // Lesson Details
-        await queryRunner.query(`CREATE INDEX idx_lesson_details_lesson ON lesson_details(lesson_id)`);
-        await queryRunner.query(`CREATE INDEX idx_lesson_details_type ON lesson_details(content_type)`);
-
-        // Update timestamp trigger function
+        // Create auto-update trigger for updated_at
         await queryRunner.query(`
             CREATE OR REPLACE FUNCTION update_updated_at_column()
             RETURNS TRIGGER AS $$
@@ -215,33 +262,25 @@ export class CreateCompleteSchema1706360000000 implements MigrationInterface {
                 NEW.updated_at = CURRENT_TIMESTAMP;
                 RETURN NEW;
             END;
-            $$ language 'plpgsql'
+            $$ language 'plpgsql';
         `);
 
         // Apply triggers
-        await queryRunner.query(`CREATE TRIGGER update_permissions_timestamp BEFORE UPDATE ON permissions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()`);
-        await queryRunner.query(`CREATE TRIGGER update_roles_timestamp BEFORE UPDATE ON roles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()`);
-        await queryRunner.query(`CREATE TRIGGER update_users_timestamp BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()`);
-        await queryRunner.query(`CREATE TRIGGER update_courses_timestamp BEFORE UPDATE ON courses FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()`);
-        await queryRunner.query(`CREATE TRIGGER update_classes_timestamp BEFORE UPDATE ON classes FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()`);
-        await queryRunner.query(`CREATE TRIGGER update_lessons_timestamp BEFORE UPDATE ON lessons FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()`);
-        await queryRunner.query(`CREATE TRIGGER update_lesson_details_timestamp BEFORE UPDATE ON lesson_details FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()`);
+        const tables = ['permissions', 'roles', 'users', 'courses', 'classes', 'lessons', 'lesson_details', 'exercise_sections', 'questions', 'common_lists'];
+        for (const table of tables) {
+            await queryRunner.query(`
+                CREATE TRIGGER update_${table}_updated_at
+                    BEFORE UPDATE ON ${table}
+                    FOR EACH ROW
+                    EXECUTE FUNCTION update_updated_at_column();
+            `);
+        }
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        // Drop triggers
-        await queryRunner.query(`DROP TRIGGER IF EXISTS update_lesson_details_timestamp ON lesson_details`);
-        await queryRunner.query(`DROP TRIGGER IF EXISTS update_lessons_timestamp ON lessons`);
-        await queryRunner.query(`DROP TRIGGER IF EXISTS update_classes_timestamp ON classes`);
-        await queryRunner.query(`DROP TRIGGER IF EXISTS update_courses_timestamp ON courses`);
-        await queryRunner.query(`DROP TRIGGER IF EXISTS update_users_timestamp ON users`);
-        await queryRunner.query(`DROP TRIGGER IF EXISTS update_roles_timestamp ON roles`);
-        await queryRunner.query(`DROP TRIGGER IF EXISTS update_permissions_timestamp ON permissions`);
-
-        // Drop function
-        await queryRunner.query(`DROP FUNCTION IF EXISTS update_updated_at_column()`);
-
         // Drop tables
+        await queryRunner.query(`DROP TABLE IF EXISTS questions CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS exercise_sections CASCADE`);
         await queryRunner.query(`DROP TABLE IF EXISTS lesson_details CASCADE`);
         await queryRunner.query(`DROP TABLE IF EXISTS lessons CASCADE`);
         await queryRunner.query(`DROP TABLE IF EXISTS class_students CASCADE`);
@@ -250,13 +289,19 @@ export class CreateCompleteSchema1706360000000 implements MigrationInterface {
         await queryRunner.query(`DROP TABLE IF EXISTS users CASCADE`);
         await queryRunner.query(`DROP TABLE IF EXISTS roles CASCADE`);
         await queryRunner.query(`DROP TABLE IF EXISTS permissions CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS common_lists CASCADE`);
 
         // Drop types
-        await queryRunner.query(`DROP TYPE IF EXISTS course_kind_enum CASCADE`);
-        await queryRunner.query(`DROP TYPE IF EXISTS course_level_enum CASCADE`);
-        await queryRunner.query(`DROP TYPE IF EXISTS permission_resource_enum CASCADE`);
-        await queryRunner.query(`DROP TYPE IF EXISTS permission_action_enum CASCADE`);
-        await queryRunner.query(`DROP TYPE IF EXISTS user_role_enum CASCADE`);
         await queryRunner.query(`DROP TYPE IF EXISTS status_enum CASCADE`);
+        await queryRunner.query(`DROP TYPE IF EXISTS user_role_enum CASCADE`);
+        await queryRunner.query(`DROP TYPE IF EXISTS course_level_enum CASCADE`);
+        await queryRunner.query(`DROP TYPE IF EXISTS course_kind_enum CASCADE`);
+        await queryRunner.query(`DROP TYPE IF EXISTS exercise_section_type_enum CASCADE`);
+        await queryRunner.query(`DROP TYPE IF EXISTS question_type_enum CASCADE`);
+        await queryRunner.query(`DROP TYPE IF EXISTS difficulty_level_enum CASCADE`);
+        await queryRunner.query(`DROP TYPE IF EXISTS common_list_type_enum CASCADE`);
+
+        // Drop function
+        await queryRunner.query(`DROP FUNCTION IF EXISTS update_updated_at_column CASCADE`);
     }
 }
