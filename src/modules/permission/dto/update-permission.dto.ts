@@ -1,24 +1,28 @@
 import {
   IsString,
   IsOptional,
-  IsEnum,
   IsBoolean,
   MaxLength,
+  IsEnum,
+  Matches,
 } from 'class-validator';
-import { PermissionAction, PermissionResource } from '../../../constants';
+import { PermissionAction, PermissionResource } from '../../../entities/enums';
 
 export class UpdatePermissionDto {
   @IsOptional()
   @IsString()
-  @MaxLength(100, { message: 'Tên permission không được quá 100 ký tự' })
+  @MaxLength(100, { message: 'Tên quyền không được quá 100 ký tự' })
+  @Matches(/^[a-z]+:[a-z]+$/, {
+    message: 'Tên quyền phải có định dạng action:resource (vd: read:users)',
+  })
   name?: string;
 
-  @IsOptional()
   @IsEnum(PermissionAction, { message: 'Action không hợp lệ' })
+  @IsOptional()
   action?: PermissionAction;
 
-  @IsOptional()
   @IsEnum(PermissionResource, { message: 'Resource không hợp lệ' })
+  @IsOptional()
   resource?: PermissionResource;
 
   @IsOptional()

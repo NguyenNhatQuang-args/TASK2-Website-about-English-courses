@@ -28,11 +28,17 @@ export class AuthService {
       throw new UnauthorizedException('Tên đăng nhập hoặc mật khẩu không đúng');
     }
 
-    if (!user.isActive) {
+    if (user.status !== 'ACTIVE') {
       throw new UnauthorizedException('Tài khoản đã bị khóa');
     }
 
-    const tokens = this.generateTokenPair(user);
+    const tokens = this.generateTokenPair({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      permissions: user.permissions ? user.permissions.split(',') : [],
+    });
 
     return {
       user: this.userService.toUserResponse(user),
@@ -44,7 +50,7 @@ export class AuthService {
   async register(registerDto: RegisterDto) {
     const user = await this.userService.create({
       ...registerDto,
-      role: UserRole.USER,
+      role: UserRole.STUDENT,
     });
 
     const tokens = this.generateTokenPair({
@@ -52,7 +58,7 @@ export class AuthService {
       username: user.username,
       email: user.email,
       role: user.role,
-      permissions: user.permissions,
+      permissions: Array.isArray(user.permissions) ? user.permissions : [],
     });
 
     return {

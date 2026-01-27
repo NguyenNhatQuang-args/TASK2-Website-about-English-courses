@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { ClassService  } from './class.service';
 import { CreateClassDto } from './create-class.dto';
 
@@ -7,7 +7,13 @@ export class ClassController {
     constructor(private readonly classService: ClassService) {}
 
     @Post()
-    create(@Body() createClassDto: CreateClassDto) {
-        return this.classService.create(createClassDto);
+    @HttpCode(HttpStatus.CREATED)
+    async create(@Body() createClassDto: CreateClassDto) {
+        const result = await this.classService.create(createClassDto);
+        return {
+            success: true,
+            message: 'Tạo lớp học thành công',
+            data: result,
+        };
     }
 }

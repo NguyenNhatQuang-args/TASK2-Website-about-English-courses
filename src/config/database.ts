@@ -3,13 +3,18 @@ import { config, isDevelopment } from './index';
 import { User } from '../entities/user.entity';
 import { Role } from '../entities/role.entity';
 import { Permission } from '../entities/permission.entity';
+import { Course } from '../entities/course.entity';
+import { Class } from '../entities/class.entity';
+import { ClassStudent } from '../entities/class-student.entity';
+import { Lesson } from '../entities/lesson.entity';
+import { LessonDetail } from '../entities/lesson-detail.entity';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
   url: config.databaseUrl,
-  synchronize: isDevelopment(), // Auto sync in development only
+  synchronize: false, // Don't auto sync - use migrations
   logging: isDevelopment(),
-  entities: [User, Role, Permission],
+  entities: [User, Role, Permission, Course, Class, ClassStudent, Lesson, LessonDetail],
   migrations: ['src/migrations/*.ts'],
   subscribers: [],
   ssl: {

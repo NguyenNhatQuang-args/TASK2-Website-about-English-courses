@@ -5,7 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { PermissionAction, PermissionResource } from '../constants';
+import { PermissionAction, PermissionResource } from './enums';
 
 @Entity('permissions')
 export class Permission {
@@ -18,14 +18,16 @@ export class Permission {
   @Column({
     type: 'enum',
     enum: PermissionAction,
+    nullable: true,
   })
-  action!: PermissionAction;
+  action!: PermissionAction | null;
 
   @Column({
     type: 'enum',
     enum: PermissionResource,
+    nullable: true,
   })
-  resource!: PermissionResource;
+  resource!: PermissionResource | null;
 
   @Column({ type: 'text', default: '' })
   description!: string;
@@ -33,9 +35,9 @@ export class Permission {
   @Column({ type: 'boolean', name: 'is_active', default: true })
   isActive!: boolean;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt!: Date;
 }
