@@ -12,11 +12,16 @@ import { LessonsModule } from './modules/lessons/lessons.module';
 import { CommonListModule } from './modules/common-list/common-list.module';
 
 // Entities
-import { User } from './entities/user.entity';
-import { Role } from './entities/role.entity';
-import { Permission } from './entities/permission.entity';
-import { Class } from './modules/class/class.entity';
-import { Lesson } from './modules/lessons/lessons.entity';
+import { 
+  User, 
+  Role, 
+  Permission, 
+  Course, 
+  Class, 
+  ClassStudent, 
+  Lesson, 
+  LessonDetail 
+} from './entities';
 import { CommonList } from './modules/common-list/common-list.entity';
 
 @Module({
@@ -34,8 +39,8 @@ import { CommonList } from './modules/common-list/common-list.entity';
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
-        entities: [User, Role, Permission, Class, Lesson, CommonList],
-        synchronize: configService.get<string>('NODE_ENV') === 'development',
+        entities: [User, Role, Permission, Course, Class, ClassStudent, Lesson, LessonDetail, CommonList],
+        synchronize: false, // Use migrations instead
         autoLoadEntities: true,
         ssl: configService.get<string>('NODE_ENV') === 'production' 
              ? { rejectUnauthorized: false } 

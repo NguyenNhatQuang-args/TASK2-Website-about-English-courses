@@ -1,19 +1,32 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, IsEnum } from 'class-validator';
+import { Status } from '../../entities/enums';
 
 export class LessonsDto {
   @IsString()
-  @IsNotEmpty({ message: 'Tên bài học không được để trống' })
-  name: string;
-
-  @IsString()
-  @IsNotEmpty({ message: 'Mã bài học không được để trống' })
-  code: string;
+  @IsNotEmpty({ message: 'Tiêu đề bài học không được để trống' })
+  title: string;
 
   @IsString()
   @IsOptional()
   description?: string;
 
+  @IsUUID()
+  @IsOptional()
+  courseId?: string;
+
+  @IsUUID()
+  @IsOptional()
+  classId?: string;
+
   @IsNumber()
-  @IsNotEmpty({ message: 'ID lớp học là bắt buộc' })
-  classId: number;
+  @IsOptional()
+  orderIndex?: number;
+
+  @IsNumber()
+  @IsOptional()
+  durationMinutes?: number;
+
+  @IsEnum(Status)
+  @IsOptional()
+  status?: Status;
 }

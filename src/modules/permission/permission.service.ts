@@ -7,7 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Permission } from '../../entities/permission.entity';
 import { CreatePermissionDto, UpdatePermissionDto, PermissionQueryDto } from './dto';
-import { UserRole } from '../../constants';
+import { PermissionAction, PermissionResource } from '../../entities/enums';
 
 @Injectable()
 export class PermissionService {
@@ -18,20 +18,20 @@ export class PermissionService {
 
   // Create permission
   async create(createPermissionDto: CreatePermissionDto) {
-    // Check code exists
-    const existingCode = await this.permissionRepository.findOne({
-      where: { code: createPermissionDto.code },
+    // Check name exists
+    const existingName = await this.permissionRepository.findOne({
+      where: { name: createPermissionDto.name },
     });
 
-    if (existingCode) {
-      throw new ConflictException('Mã quyền đã tồn tại');
+    if (existingName) {
+      throw new ConflictException('Tên quyền đã tồn tại');
     }
 
     const permission = this.permissionRepository.create({
-      code: createPermissionDto.code,
       name: createPermissionDto.name,
+      action: createPermissionDto.action,
+      resource: createPermissionDto.resource,
       description: createPermissionDto.description || '',
-      roles: createPermissionDto.roles || [],
     });
 
     await this.permissionRepository.save(permission);
@@ -62,7 +62,7 @@ export class PermissionService {
 
     const permissions = await this.permissionRepository.find({
       where,
-      order: { code: 'ASC' },
+      order: { name: 'ASC' },
     });
 
     return {
@@ -81,13 +81,13 @@ export class PermissionService {
       throw new NotFoundException('Không tìm thấy quyền');
     }
 
-    // Check code uniqueness
-    if (updatePermissionDto.code && updatePermissionDto.code !== permission.code) {
-      const existingCode = await this.permissionRepository.findOne({
-        where: { code: updatePermissionDto.code },
+    // Check name uniqueness
+    if (updatePermissionDto.name && updatePermissionDto.name !== permission.name) {
+      const existingName = await this.permissionRepository.findOne({
+        where: { name: updatePermissionDto.name },
       });
-      if (existingCode) {
-        throw new ConflictException('Mã quyền đã tồn tại');
+      if (existingName) {
+        throw new ConflictException('Tên quyền đã tồn tại');
       }
     }
 
@@ -128,19 +128,24 @@ export class PermissionService {
     return this.toPermissionResponse(permission);
   }
 
-  // Get available roles
-  getRoles() {
-    return Object.values(UserRole);
+  // Get available actions
+  getActions() {
+    return Object.values(PermissionAction);
+  }
+
+  // Get available resources
+  getResources() {
+    return Object.values(PermissionResource);
   }
 
   // Transform to response
   private toPermissionResponse(permission: Permission) {
     return {
       id: permission.id,
-      code: permission.code,
       name: permission.name,
+      action: permission.action,
+      resource: permission.resource,
       description: permission.description,
-      roles: permission.roles,
       isActive: permission.isActive,
       createdAt: permission.createdAt.toISOString(),
       updatedAt: permission.updatedAt.toISOString(),

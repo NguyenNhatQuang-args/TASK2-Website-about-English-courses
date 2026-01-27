@@ -1,1 +1,1 @@
-export * from './exercise.dto';
+// Export DTOs

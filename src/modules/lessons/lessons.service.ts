@@ -1,9 +1,8 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Lesson } from './lessons.entity'; 
+import { Lesson, Class, Status } from '../../entities';
 import { LessonsDto } from './lessons.dto';
-import { Class } from '../class/class.entity';
 
 @Injectable()
 export class LessonsService {
@@ -16,33 +15,51 @@ export class LessonsService {
   ) {}
 
   async create(dto: LessonsDto) {
-    // Kiểm tra mã bài học trùng lặp
-    const existLesson = await this.lessonRepository.findOne({ where: { code: dto.code } });
+    // Kiểm tra tên bài học trùng lặp
+    const existLesson = await this.lessonRepository.findOne({ where: { title: dto.title } });
     if (existLesson) {
-      throw new BadRequestException(`Mã bài học '${dto.code}' đã tồn tại!`);
+      throw new BadRequestException(`Bài học '${dto.title}' đã tồn tại!`);
     }
 
-    // Kiểm tra ID lớp học hợp lệ
-    const classroom = await this.classRepository.findOne({ where: { id: dto.classId } });
-    if (!classroom) {
-      throw new NotFoundException(`Lớp học với ID ${dto.classId} không tồn tại!`);
+    // Kiểm tra ID lớp học hợp lệ nếu có
+    if (dto.classId) {
+      const classroom = await this.classRepository.findOne({ where: { id: dto.classId } });
+      if (!classroom) {
+        throw new NotFoundException(`Lớp học với ID ${dto.classId} không tồn tại!`);
+      }
     }
 
     const newLesson = this.lessonRepository.create({
-      name: dto.name,
-      code: dto.code,
+      title: dto.title,
       description: dto.description,
-      class: classroom,
+      classId: dto.classId,
+      courseId: dto.courseId,
+      orderIndex: dto.orderIndex || 0,
+      status: Status.ACTIVE,
     });
 
     return await this.lessonRepository.save(newLesson);
   }
 
-  async findAllByClass(classId: number) {
+  async findAllByClass(classId: string) {
     return await this.lessonRepository.find({
-      where: { class: { id: classId } },
-      relations: ['class'],
-      order: { id: 'ASC' }
+      where: { classId },
+      relations: ['class', 'course'],
+      order: { orderIndex: 'ASC' }
+    });
+  }
+
+  async findAll() {
+    return await this.lessonRepository.find({
+      relations: ['class', 'course'],
+      order: { orderIndex: 'ASC' }
+    });
+  }
+
+  async findOne(id: string) {
+    return await this.lessonRepository.findOne({
+      where: { id },
+      relations: ['class', 'course'],
     });
   }
 }

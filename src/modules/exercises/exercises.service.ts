@@ -2,21 +2,21 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ExerciseEntity } from './exercises.entity';
-import { Lesson } from '../lessons/lessons.entity';
+import { Lesson } from '../../entities';
 import { CreateExerciseDTO, UpdateExerciseDTO, CreateExerciseSectionDTO, SubmitWordBankDTO } from './exercises.dto';
 import { ExerciseSection, Dang1_WordBank, WordBankUserState, WordBankSubmissionResponse, QuestionUnion } from '../../types/exercise.type';
+
+// In-memory storage for exercises (since ExerciseEntity is not a TypeORM entity)
+const exercisesStorage: ExerciseEntity[] = [];
 
 @Injectable()
 export class ExercisesService {
   constructor(
-    @InjectRepository(ExerciseEntity)
-    private readonly exerciseRepository: Repository<ExerciseEntity>,
-
     @InjectRepository(Lesson)
     private readonly lessonRepository: Repository<Lesson>,
   ) {}
 
-  async create(dto: CreateExerciseDTO, lessonId?: number): Promise<ExerciseEntity> {
+  async create(dto: CreateExerciseDTO, lessonId?: string): Promise<ExerciseEntity> {
     if (lessonId) {
       const lesson = await this.lessonRepository.findOne({ where: { id: lessonId } });
       if (!lesson) {
@@ -44,21 +44,16 @@ export class ExercisesService {
       sections,
     });
 
-    return await this.exerciseRepository.save(newExercise);
+    exercisesStorage.push(newExercise);
+    return newExercise;
   }
 
   async findAll(): Promise<ExerciseEntity[]> {
-    return await this.exerciseRepository.find({
-      relations: ['lesson'],
-      order: { lessonNumber: 'ASC' },
-    });
+    return exercisesStorage.sort((a, b) => a.lessonNumber - b.lessonNumber);
   }
 
   async findById(id: string): Promise<ExerciseEntity> {
-    const exercise = await this.exerciseRepository.findOne({
-      where: { id },
-      relations: ['lesson'],
-    });
+    const exercise = exercisesStorage.find(e => e.id === id);
 
     if (!exercise) {
       throw new NotFoundException(`Bài tập với ID ${id} không tồn tại!`);
@@ -67,19 +62,12 @@ export class ExercisesService {
     return exercise;
   }
 
-  async findByLessonId(lessonId: number): Promise<ExerciseEntity[]> {
-    return await this.exerciseRepository.find({
-      relations: ['lesson'],
-      order: { lessonNumber: 'ASC' },
-    }).then(exercises => exercises.filter(e => e.lessonNumber));
+  async findByLessonId(lessonId: string): Promise<ExerciseEntity[]> {
+    return exercisesStorage.filter(e => e.lessonNumber).sort((a, b) => a.lessonNumber - b.lessonNumber);
   }
 
   async findByCourseId(courseId: string): Promise<ExerciseEntity[]> {
-    return await this.exerciseRepository.find({
-      where: { courseId },
-      relations: ['lesson'],
-      order: { lessonNumber: 'ASC' },
-    });
+    return exercisesStorage.filter(e => e.courseId === courseId).sort((a, b) => a.lessonNumber - b.lessonNumber);
   }
 
   async update(id: string, dto: UpdateExerciseDTO): Promise<ExerciseEntity> {
@@ -91,12 +79,15 @@ export class ExercisesService {
       sections: dto.sections || exercise.sections,
     });
 
-    return await this.exerciseRepository.save(exercise);
+    return exercise;
   }
 
   async delete(id: string): Promise<{ message: string }> {
-    const exercise = await this.findById(id);
-    await this.exerciseRepository.remove(exercise);
+    const index = exercisesStorage.findIndex(e => e.id === id);
+    if (index === -1) {
+      throw new NotFoundException(`Bài tập với ID ${id} không tồn tại!`);
+    }
+    exercisesStorage.splice(index, 1);
     return { message: `Bài tập ${id} đã bị xóa thành công!` };
   }
 
@@ -116,7 +107,11 @@ export class ExercisesService {
     };
 
     exercise.addSection(newSection);
-    return await this.exerciseRepository.save(exercise);
+    const index = exercisesStorage.findIndex(e => e.id === exerciseId);
+    if (index !== -1) {
+      exercisesStorage[index] = exercise;
+    }
+    return exercise;
   }
 
   async updateSection(
@@ -126,13 +121,21 @@ export class ExercisesService {
   ): Promise<ExerciseEntity> {
     const exercise = await this.findById(exerciseId);
     exercise.updateSection(sectionId, updates);
-    return await this.exerciseRepository.save(exercise);
+    const index = exercisesStorage.findIndex(e => e.id === exerciseId);
+    if (index !== -1) {
+      exercisesStorage[index] = exercise;
+    }
+    return exercise;
   }
 
   async removeSection(exerciseId: string, sectionId: string): Promise<ExerciseEntity> {
     const exercise = await this.findById(exerciseId);
     exercise.removeSection(sectionId);
-    return await this.exerciseRepository.save(exercise);
+    const index = exercisesStorage.findIndex(e => e.id === exerciseId);
+    if (index !== -1) {
+      exercisesStorage[index] = exercise;
+    }
+    return exercise;
   }
 
   async submitWordBank(

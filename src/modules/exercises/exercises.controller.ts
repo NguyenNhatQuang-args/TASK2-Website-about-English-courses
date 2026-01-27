@@ -25,7 +25,7 @@ export class ExercisesController {
 
   @Post('create')
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-  async create(@Body() dto: CreateExerciseDTO, @Query('lessonId') lessonId?: number) {
+  async create(@Body() dto: CreateExerciseDTO, @Query('lessonId') lessonId?: string) {
     return this.exercisesService.create(dto, lessonId);
   }
 
@@ -40,7 +40,7 @@ export class ExercisesController {
   }
 
   @Get('lesson/:lessonId')
-  async findByLessonId(@Param('lessonId') lessonId: number) {
+  async findByLessonId(@Param('lessonId') lessonId: string) {
     return this.exercisesService.findByLessonId(lessonId);
   }
 

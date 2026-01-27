@@ -35,13 +35,23 @@ export class PermissionController {
     };
   }
 
-  // GET /api/v1/permissions/roles
-  @Get('roles')
-  getRoles() {
+  // GET /api/v1/permissions/actions
+  @Get('actions')
+  getActions() {
     return {
       success: true,
-      message: 'Lấy danh sách roles thành công',
-      data: this.permissionService.getRoles(),
+      message: 'Lấy danh sách actions thành công',
+      data: this.permissionService.getActions(),
+    };
+  }
+
+  // GET /api/v1/permissions/resources
+  @Get('resources')
+  getResources() {
+    return {
+      success: true,
+      message: 'Lấy danh sách resources thành công',
+      data: this.permissionService.getResources(),
     };
   }
 
