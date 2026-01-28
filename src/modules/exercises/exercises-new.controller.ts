@@ -34,7 +34,7 @@ export class ExercisesController {
 
   // POST /api/v1/exercises/sections - Create new section
   @Post('sections')
-  @Roles('admin', 'teacher')
+  @Roles('ADMIN', 'TEACHER')
   async createSection(@Body() createSectionDto: CreateSectionDto) {
     const result = await this.exercisesService.createSection(createSectionDto);
     return {
@@ -92,7 +92,7 @@ export class ExercisesController {
 
   // PUT /api/v1/exercises/sections/:id - Update section
   @Put('sections/:id')
-  @Roles('admin', 'teacher')
+  @Roles('ADMIN', 'TEACHER')
   async updateSection(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateSectionDto: UpdateSectionDto,
@@ -107,7 +107,7 @@ export class ExercisesController {
 
   // DELETE /api/v1/exercises/sections/:id - Delete section
   @Delete('sections/:id')
-  @Roles('admin')
+  @Roles('ADMIN')
   async deleteSection(@Param('id', ParseUUIDPipe) id: string) {
     await this.exercisesService.deleteSection(id);
     return {
@@ -120,7 +120,7 @@ export class ExercisesController {
 
   // POST /api/v1/exercises/questions - Create new question
   @Post('questions')
-  @Roles('admin', 'teacher')
+  @Roles('ADMIN', 'TEACHER')
   async createQuestion(@Body() createQuestionDto: CreateQuestionDto) {
     const result = await this.exercisesService.createQuestion(createQuestionDto);
     return {
@@ -132,7 +132,7 @@ export class ExercisesController {
 
   // POST /api/v1/exercises/questions/bulk - Create multiple questions
   @Post('questions/bulk')
-  @Roles('admin', 'teacher')
+  @Roles('ADMIN', 'TEACHER')
   async createBulkQuestions(@Body() questions: CreateQuestionDto[]) {
     const result = await this.exercisesService.createBulkQuestions(questions);
     return {
@@ -180,7 +180,7 @@ export class ExercisesController {
 
   // PUT /api/v1/exercises/questions/:id - Update question
   @Put('questions/:id')
-  @Roles('admin', 'teacher')
+  @Roles('ADMIN', 'TEACHER')
   async updateQuestion(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateQuestionDto: UpdateQuestionDto,
@@ -195,7 +195,7 @@ export class ExercisesController {
 
   // DELETE /api/v1/exercises/questions/:id - Delete question
   @Delete('questions/:id')
-  @Roles('admin')
+  @Roles('ADMIN')
   async deleteQuestion(@Param('id', ParseUUIDPipe) id: string) {
     await this.exercisesService.deleteQuestion(id);
     return {

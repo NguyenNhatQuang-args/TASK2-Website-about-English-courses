@@ -20,7 +20,7 @@ import { UserRole } from '../../entities/enums';
 
 @Controller('permissions')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+@Roles('ADMIN')
 export class PermissionController {
   constructor(private readonly permissionService: PermissionService) {}
 

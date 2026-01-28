@@ -22,7 +22,7 @@ export class LessonsController {
 
   // POST /api/v1/lessons - Create new lesson
   @Post()
-  @Roles('admin', 'teacher')
+  @Roles('ADMIN', 'TEACHER')
   async create(@Body() createLessonDto: CreateLessonDto) {
     const result = await this.lessonsService.create(createLessonDto);
     return {
@@ -81,7 +81,7 @@ export class LessonsController {
 
   // PUT /api/v1/lessons/:id - Update lesson
   @Put(':id')
-  @Roles('admin', 'teacher')
+  @Roles('ADMIN', 'TEACHER')
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateLessonDto: UpdateLessonDto,
@@ -96,7 +96,7 @@ export class LessonsController {
 
   // DELETE /api/v1/lessons/:id - Delete lesson
   @Delete(':id')
-  @Roles('admin')
+  @Roles('ADMIN')
   async delete(@Param('id', ParseUUIDPipe) id: string) {
     await this.lessonsService.delete(id);
     return {

@@ -24,7 +24,7 @@ export class ClassController {
 
     // POST /api/v1/classes - Create new class
     @Post()
-    @Roles('admin', 'teacher')
+    @Roles('ADMIN', 'TEACHER')
     @HttpCode(HttpStatus.CREATED)
     async create(@Body() createClassDto: CreateClassDto) {
         const result = await this.classService.create(createClassDto);
@@ -60,7 +60,7 @@ export class ClassController {
 
     // PUT /api/v1/classes/:id - Update class
     @Put(':id')
-    @Roles('admin', 'teacher')
+    @Roles('ADMIN', 'TEACHER')
     async update(
         @Param('id', ParseUUIDPipe) id: string,
         @Body() updateClassDto: UpdateClassDto,
@@ -75,7 +75,7 @@ export class ClassController {
 
     // DELETE /api/v1/classes/:id - Delete class
     @Delete(':id')
-    @Roles('admin')
+    @Roles('ADMIN')
     async delete(@Param('id', ParseUUIDPipe) id: string) {
         await this.classService.delete(id);
         return {
@@ -98,7 +98,7 @@ export class ClassController {
 
     // POST /api/v1/classes/:id/students - Add students to class
     @Post(':id/students')
-    @Roles('admin', 'teacher')
+    @Roles('ADMIN', 'TEACHER')
     async addStudents(
         @Param('id', ParseUUIDPipe) id: string,
         @Body() addStudentsDto: AddStudentsDto,
@@ -113,7 +113,7 @@ export class ClassController {
 
     // DELETE /api/v1/classes/:id/students/:studentId - Remove student from class
     @Delete(':id/students/:studentId')
-    @Roles('admin', 'teacher')
+    @Roles('ADMIN', 'TEACHER')
     async removeStudent(
         @Param('id', ParseUUIDPipe) id: string,
         @Param('studentId', ParseUUIDPipe) studentId: string,
